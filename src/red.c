@@ -1,4 +1,4 @@
-/* Kilo - a simple text editor from snaptoken's tutorial */
+/* Red - Ross' simple text editor. Based on snaptoken's kilo tutorial */
 
 #define _DEFAULT_SOURCE
 #define _BSD_SOURCE
@@ -21,8 +21,8 @@
 
 #define PROG_VERSION "0.0.1"
 #define TAB_STOP 4
-#define KILO_QUIT_TIMES 3
-#define KILO_SAVE_PERMS 0644
+#define RED_QUIT_TIMES 3
+#define RED_SAVE_PERMS 0644
 
 #define CTRL_KEY(k) ((k) & 0x1f)
 
@@ -97,11 +97,10 @@ struct editorConfig
 char *C_HL_extensions[] = {".c", ".h", ".cpp", NULL};
 
 char *C_HL_keywords[] = {
-  "switch", "if", "while", "for", "break", "continue", "return", "else",
-  "struct", "union", "typedef", "static", "enum", "class", "case",
-  "int|", "long|", "double|", "float|", "char|", "unsigned|", "signed|",
-  "void|", NULL
-};
+    "switch", "if", "while", "for", "break", "continue", "return", "else",
+    "struct", "union", "typedef", "static", "enum", "class", "case",
+    "int|", "long|", "double|", "float|", "char|", "unsigned|", "signed|",
+    "void|", NULL};
 
 struct editorSyntax HLDB[] = {
     {"c",
@@ -332,21 +331,28 @@ void editorUpdateSyntax(erow *row)
             }
         }
 
-        if (mcs_len && mce_len && !in_string) {
-            if (in_comment) {
+        if (mcs_len && mce_len && !in_string)
+        {
+            if (in_comment)
+            {
                 row->hl[i] = HL_MLCOMMENT;
-                if (!strncmp(&row->render[i], mce, mce_len)) {
+                if (!strncmp(&row->render[i], mce, mce_len))
+                {
                     memset(&row->hl[i], HL_MLCOMMENT, mce_len);
-                    i+= mce_len;
+                    i += mce_len;
                     in_comment = 0;
                     continue;
-                } else {
+                }
+                else
+                {
                     i++;
                     continue;
                 }
-            } else if (!strncmp(&row->render[i], mcs, mcs_len)) {
+            }
+            else if (!strncmp(&row->render[i], mcs, mcs_len))
+            {
                 memset(&row->hl[i], HL_MLCOMMENT, mcs_len);
-                i=+ mcs_len;
+                i = +mcs_len;
                 in_comment = 1;
                 continue;
             }
@@ -393,21 +399,26 @@ void editorUpdateSyntax(erow *row)
             }
         }
 
-        if (prev_sep) {
+        if (prev_sep)
+        {
             int j;
-            for (j = 0; keywords[j]; j++) {
+            for (j = 0; keywords[j]; j++)
+            {
                 int klen = strlen(keywords[j]);
-                int kw2 = keywords[j][klen-1] == '|';
-                if (kw2) klen--;
+                int kw2 = keywords[j][klen - 1] == '|';
+                if (kw2)
+                    klen--;
 
                 if (!strncmp(&row->render[i], keywords[j], klen) &&
-                        is_separator(row->render[i + klen])) {
+                    is_separator(row->render[i + klen]))
+                {
                     memset(&row->hl[i], kw2 ? HL_KEYWORD2 : HL_KEYWORD1, klen);
-                i+= klen;
-                break;
+                    i += klen;
+                    break;
                 }
             }
-            if (keywords[j] != NULL) {
+            if (keywords[j] != NULL)
+            {
                 prev_sep = 0;
                 continue;
             }
@@ -546,7 +557,8 @@ void editorInsertRow(int at, char *s, size_t len)
 
     E.row = realloc(E.row, sizeof(erow) * (E.numrows + 1));
     memmove(&E.row[at + 1], &E.row[at], sizeof(erow) * (E.numrows - at));
-    for (int j = (at + 1); j <= E.numrows; j++) E.row[j].idx++;
+    for (int j = (at + 1); j <= E.numrows; j++)
+        E.row[j].idx++;
 
     E.row[at].idx = at;
 
@@ -579,7 +591,8 @@ void editorDelRow(int at)
 
     editorFreeRow(&E.row[at]);
     memmove(&E.row[at], &E.row[at + 1], sizeof(erow) * (E.numrows - at - 1));
-    for (int j = at; j < (E.numrows - 1); j++) E.row[j].idx--;
+    for (int j = at; j < (E.numrows - 1); j++)
+        E.row[j].idx--;
     E.numrows--;
     E.dirty++;
 }
@@ -734,7 +747,7 @@ void editorSave()
     int len;
     char *buf = editorRowsToString(&len);
 
-    int fd = open(E.filename, O_RDWR | O_CREAT, KILO_SAVE_PERMS);
+    int fd = open(E.filename, O_RDWR | O_CREAT, RED_SAVE_PERMS);
     if (fd != -1)
     {
         if (ftruncate(fd, len) != -1)
@@ -906,7 +919,7 @@ void editorDrawRows(struct abuf *ab)
             {
                 char welcome[80];
                 int welcomelen = snprintf(welcome, sizeof(welcome),
-                                          "Kilo editor -- version %s",
+                                          "\033[1;31mRed editor\033[0m -- version %s",
                                           PROG_VERSION);
                 if (welcomelen > E.screencols)
                     welcomelen = E.screencols;
@@ -938,18 +951,21 @@ void editorDrawRows(struct abuf *ab)
             int j;
             for (j = 0; j < len; j++)
             {
-                if (iscntrl(c[j])) {
+                if (iscntrl((int)c[j])) // int cast added to keep iscntrl() happy
+                {
                     char sym = (c[j] <= 26) ? '@' + c[j] : '?';
                     abAppend(ab, "\x1b[7m", 4);
                     abAppend(ab, &sym, 1);
                     abAppend(ab, "\x1b[m", 3);
-                    if (current_colour != -1) {
+                    if (current_colour != -1)
+                    {
                         char buf[16];
                         int clen = snprintf(buf, sizeof(buf),
                                             "\x1b[%dm", current_colour);
                         abAppend(ab, buf, clen);
                     }
-                } else if (hl[j] == HL_NORMAL)
+                }
+                else if (hl[j] == HL_NORMAL)
                 {
                     if (current_colour != -1)
                     {
@@ -1165,7 +1181,7 @@ void editorMoveCursor(int key)
 
 void editorProcessKeypress()
 {
-    static int quit_times = KILO_QUIT_TIMES;
+    static int quit_times = RED_QUIT_TIMES;
 
     int c = editorReadKey();
 
@@ -1258,7 +1274,7 @@ void editorProcessKeypress()
         break;
     }
 
-    quit_times = KILO_QUIT_TIMES;
+    quit_times = RED_QUIT_TIMES;
 }
 
 /* initialize*/
