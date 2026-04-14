@@ -9,6 +9,7 @@ Basic text file editing, c syntax highlighting
 - [ ] Create file if passed filename doesn't exist
 - [ ] Add Ctrl-Left/Right for word jumps
 - [ ] Scroll wheel support
+- [ ] Replace ioctl and termios with something cross-compatible (curses?)
 - [ ] Extend syntax highlighting (python, markdown)
   - Spin syntax highlighting out into files for each language a la vim?
 - [ ] Vim motions/modes
