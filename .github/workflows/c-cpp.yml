@@ -18,18 +18,18 @@ jobs:
         run: make check
       - name: make distcheck
         run: make distcheck
-build-windows:
-  name: Build on Windows
-  runs-on: windows-latest
-
-  steps:
-    - uses: actions/checkout@v4
-
-    - name: Install Make
-      run: choco install make
-
-    - name: Build
-      run: make
-
-    - name: Run tests
-      run: make check
+  build-windows:
+    name: Build on Windows
+    runs-on: windows-latest
+  
+    steps:
+      - uses: actions/checkout@v4
+  
+      - name: Install Make
+        run: choco install make
+  
+      - name: Build
+        run: make
+  
+      - name: Run tests
+        run: make check
