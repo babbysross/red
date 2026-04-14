@@ -1,5 +1,5 @@
 # Red
-Ross' simple text editor, based on kilo (designed by antirez and improved by snaptoken).
+Ross' EDitor, a simple text editor based on kilo (designed by antirez and improved by snaptoken).
 
 ## Features
 Basic text file editing, c syntax highlighting
