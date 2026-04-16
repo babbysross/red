@@ -38,7 +38,9 @@ enum editorKey
     HOME_KEY,
     END_KEY,
     PAGE_UP,
-    PAGE_DOWN
+    PAGE_DOWN,
+    CTRL_ARROW_LEFT,
+    CTRL_ARROW_RIGHT
 };
 
 enum editorHighlight
@@ -170,7 +172,7 @@ int editorReadKey()
 
     if (c == '\x1b')
     {
-        char seq[3];
+        char seq[6];
 
         if (read(STDIN_FILENO, &seq[0], 1) != 1)
             return '\x1b';
@@ -202,6 +204,28 @@ int editorReadKey()
                     case '8':
                         return END_KEY;
                     }
+                }
+                else if (seq[2] == ';')
+                {
+                    if (read(STDIN_FILENO, &seq[3], 1) != 1)
+                        return '\x1b';
+                    if (read(STDIN_FILENO, &seq[4], 1) != 1)
+                        return '\x1b';
+                    if (seq[3] == '5')
+                    {
+                        if (seq[4] == 'D')
+                            return CTRL_ARROW_LEFT;
+                        if (seq[4] == 'C')
+                            return CTRL_ARROW_RIGHT;
+                    }
+                }
+                else if (seq[1] == '5' && seq[2] == 'D')
+                {
+                    return CTRL_ARROW_LEFT;
+                }
+                else if (seq[1] == '5' && seq[2] == 'C')
+                {
+                    return CTRL_ARROW_RIGHT;
                 }
             }
             else
@@ -1169,6 +1193,29 @@ void editorMoveCursor(int key)
             E.cy++;
         }
         break;
+
+    case CTRL_ARROW_LEFT:
+        if (E.cx != 0)
+        {
+            E.cx--;
+        }
+        else if (E.cy > 0)
+        {
+            E.cy--;
+            E.cx = E.row[E.cy].size;
+        }
+        break;
+    case CTRL_ARROW_RIGHT:
+        if (row && E.cx < row->size)
+        {
+            E.cx++;
+        }
+        else if (row && E.cx == row->size)
+        {
+            E.cy++;
+            E.cx = 0;
+        }
+        break;
     }
 
     row = (E.cy >= E.numrows) ? NULL : &E.row[E.cy];
@@ -1229,7 +1276,7 @@ void editorProcessKeypress()
         break;
 
     case BACKSPACE:
-    case CTRL_KEY('h'):
+    //case CTRL_KEY('h'): //do 
     case DEL_KEY:
         if (c == DEL_KEY)
             editorMoveCursor(ARROW_RIGHT);
@@ -1258,12 +1305,22 @@ void editorProcessKeypress()
         }
         break;
 
+    case CTRL_ARROW_LEFT:
+        editorMoveCursor(ARROW_LEFT);
+        break;
+    case CTRL_ARROW_RIGHT:
+        editorMoveCursor(ARROW_RIGHT);
+        break;
+
+    case CTRL_KEY(BACKSPACE):
+
     case ARROW_UP:
     case ARROW_DOWN:
     case ARROW_LEFT:
     case ARROW_RIGHT:
         editorMoveCursor(c);
         break;
+
 
     case CTRL_KEY('l'):
     case '\x1b':
