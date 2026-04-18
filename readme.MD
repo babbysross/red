@@ -7,7 +7,7 @@ Basic text file editing, c syntax highlighting
 ## To-Do
 
 - [ ] Create file if passed filename doesn't exist
-- [ ] Add Ctrl-Left/Right for word jumps
+- [x] Add Ctrl-Left/Right for word jumps
 - [ ] Scroll wheel support
 - [ ] Replace ioctl and termios with something cross-compatible (curses?)
 - [ ] Extend syntax highlighting (python, markdown)
