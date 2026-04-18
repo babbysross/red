@@ -1,3 +1,5 @@
-kilo
+!.github/
+red
 *.exe
 .vscode/
+.*/
