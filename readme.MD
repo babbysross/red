@@ -2,7 +2,7 @@
 Ross' EDitor, a simple text editor based on kilo (designed by antirez and improved by snaptoken).
 
 ## Features
-Basic text file editing, c syntax highlighting
+Basic text file editing with basic syntax highlighting for a few languages.
 
 ## To-Do
 
