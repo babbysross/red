@@ -16,10 +16,11 @@
 #include <termios.h>
 #include <time.h>
 #include <unistd.h>
+#include "syntax.h"
 
 /* defines */
 
-#define PROG_VERSION "0.0.1"
+#define PROG_VERSION "0.0.2"
 #define TAB_STOP 4
 #define RED_QUIT_TIMES 3
 #define RED_SAVE_PERMS 0644
@@ -44,33 +45,7 @@ enum editorKey
     CTRL_DEL
 };
 
-enum editorHighlight
-{
-    HL_NORMAL = 0,
-    HL_STRING,
-    HL_NUMBER,
-    HL_MATCH,
-    HL_COMMENT,
-    HL_MLCOMMENT,
-    HL_KEYWORD1,
-    HL_KEYWORD2
-};
-
-#define HL_HIGHLIGHT_NUMBERS (1 << 0)
-#define HL_HIGHLIGHT_STRINGS (1 << 1)
-
 /* data */
-
-struct editorSyntax
-{
-    char *filetype;
-    char **filematch;
-    char **keywords;
-    char *singleline_comment_start;
-    char *multiline_comment_start;
-    char *multiline_comment_end;
-    int flags;
-};
 
 typedef struct erow
 {
@@ -94,26 +69,6 @@ struct editorConfig
     struct editorSyntax *syntax;
     struct termios orig_termios;
 } E;
-
-/* filetypes */
-
-char *C_HL_extensions[] = {".c", ".h", ".cpp", NULL};
-
-char *C_HL_keywords[] = {
-    "switch", "if", "while", "for", "break", "continue", "return", "else",
-    "struct", "union", "typedef", "static", "enum", "class", "case",
-    "int|", "long|", "double|", "float|", "char|", "unsigned|", "signed|",
-    "void|", NULL};
-
-struct editorSyntax HLDB[] = {
-    {"c",
-     C_HL_extensions,
-     C_HL_keywords,
-     "//", "/*", "*/",
-     HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS},
-};
-
-#define HLDB_ENTRIES (sizeof(HLDB) / sizeof(HLDB[0]))
 
 /* prototypes */
 
@@ -311,7 +266,7 @@ int getWindowSize(int *rows, int *cols)
 
 int is_separator(int c)
 {
-    return isspace(c) || c == '\0' || strchr(",.()+-/*=~%<>[];", c) != NULL;
+    return isspace(c) || c == '\0' || strchr(",.()+-/*=~%<>[]:;", c) != NULL;
 }
 
 void editorUpdateSyntax(erow *row)
@@ -459,21 +414,21 @@ int editorSyntaxToColour(int hl)
     switch (hl)
     {
     case HL_STRING:
-        return 32;
+        return l_blue;
     case HL_NUMBER:
-        return 36;
+        return l_green;
     case HL_MATCH:
-        return 34;
+        return l_red;
     case HL_COMMENT:
-        return 31;
+        return grey;
     case HL_MLCOMMENT:
-        return 31;
+        return grey;
     case HL_KEYWORD1:
-        return 35;
+        return l_yellow;
     case HL_KEYWORD2:
-        return 33;
+        return purple;
     default:
-        return 37;
+        return white;
     }
 }
 
