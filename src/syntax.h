@@ -1,3 +1,9 @@
+#ifndef SYNTAX_H
+#define SYNTAX_H
+
+#include <termios.h>
+#include <time.h>
+
 #define black 30
 #define red 31
 #define green 32
@@ -14,6 +20,26 @@
 #define l_pink 95
 #define l_cyan 96
 #define l_white 97
+
+#define CTRL_KEY(k) ((k) & 0x1f)
+
+enum editorKey
+{
+    BACKSPACE = 127,
+    ESC = 27,
+    ARROW_LEFT = 1000,
+    ARROW_RIGHT,
+    ARROW_UP,
+    ARROW_DOWN,
+    DEL_KEY,
+    HOME_KEY,
+    END_KEY,
+    PAGE_UP,
+    PAGE_DOWN,
+    CTRL_ARROW_LEFT,
+    CTRL_ARROW_RIGHT,
+    CTRL_DEL
+};
 
 enum editorHighlight
 {
@@ -41,52 +67,40 @@ struct editorSyntax
     int flags;
 };
 
-/* filetypes */
+typedef struct erow
+{
+    int idx, size, rsize, hl_open_comment;
+    char *chars, *render;
+    unsigned char *hl;
+} erow;
 
-char *C_HL_extensions[] = {".c", ".h", ".cpp", NULL};
-char *py_HL_extensions[] = {".py", NULL};
-char *clj_HL_extensions[] = {".clj", ".cljr", ".cljc", NULL};
-
-
-char *C_HL_keywords[] = {
-    "switch", "if", "while", "for", "break", "continue", "return", "else",
-    "struct", "union", "typedef", "static", "enum", "class", "case",
-    "int|", "long|", "double|", "float|", "char|", "unsigned|", "signed|",
-    "void|", NULL};
-
-char *py_HL_keywords[] = {
-    "and", "as", "assert", "async", "await",
-    "break", "class", "continue", "def", "del", "elif", "else", "except",
-    "finally", "for", "from", "global", "if", "in", "is", "lambda", "not", 
-    "or", "pass", "raise", "return", "try", "while", "with", "yield",
-    "global|", "nonlocal|", "import|", "in|", "True|", "False|", "None|", 
-    "print|", "int|", "float|", "str|", "list|", "dict|", "set|", "tuple|", NULL};
-
-char *clj_HL_keywords[] = {
-    "def", "defn", "defmacro", "defmethod", "defmulti", "defprotocol", 
-    "defrecord", "deftype", "fn", "if", "do", "let", "loop", "recur", 
-    "when", "cond", "case", "for", "doseq", "try", "catch", "finally", "throw", 
-    "ns", "require", "import", "use", "refer", "and", "or", "not", "nil?", 
-    "true?", "false?", "zero?", "pos?", "neg?", "println",
-    "nil|", "true|", "false|", "string?|", "number?|", "seq?|", "map?|", 
-    "vector?|", "set?|", NULL};
-
-struct editorSyntax HLDB[] = {
-    {"c",
-     C_HL_extensions,
-     C_HL_keywords,
-     "//", "/*", "*/",
-     HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS},
-    {"python",
-     py_HL_extensions,
-     py_HL_keywords,
-     "#", "'''", "'''",
-     HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS},
-    {"clojure",
-     clj_HL_extensions,
-     clj_HL_keywords,
-     ";", "", "",
-     HL_HIGHLIGHT_NUMBERS | HL_HIGHLIGHT_STRINGS}
+struct editorConfig
+{
+    int cx, cy;
+    int rx;
+    int rowoff, coloff;
+    int screenrows, screencols;
+    int numrows;
+    erow *row;
+    int dirty;
+    char *filename;
+    char statusmsg[80];
+    time_t statusmsg_time;
+    struct editorSyntax *syntax;
+    struct termios orig_termios;
 };
 
-#define HLDB_ENTRIES (sizeof(HLDB) / sizeof(HLDB[0]))
+/* Global editor instance - defined in syntax.c */
+extern struct editorConfig E;
+
+/* Syntax highlighting database - defined in syntax.c */
+extern struct editorSyntax HLDB[];
+extern unsigned int HLDB_ENTRIES;
+
+/* Function declarations */
+int is_separator(int c);
+void editorUpdateSyntax(erow *row);
+int editorSyntaxToColour(int hl);
+void editorSelectSyntaxHighlight();
+
+#endif
