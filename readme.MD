@@ -10,6 +10,10 @@ Basic text file editing, c syntax highlighting
 - [x] Add Ctrl-Left/Right for word jumps
 - [ ] Scroll wheel support
 - [ ] Replace ioctl and termios with something cross-compatible (curses?)
-- [ ] Extend syntax highlighting (python, markdown)
-  - Spin syntax highlighting out into files for each language a la vim?
+- [ ] Extend syntax highlighting
+  - [x] Python
+  - [x] Clojure
+  - [ ] Javascript
+  - [ ] Java
+  - [ ] Rust
 - [ ] Vim motions/modes
