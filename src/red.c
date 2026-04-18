@@ -40,7 +40,8 @@ enum editorKey
     PAGE_UP,
     PAGE_DOWN,
     CTRL_ARROW_LEFT,
-    CTRL_ARROW_RIGHT
+    CTRL_ARROW_RIGHT,
+    CTRL_DEL
 };
 
 enum editorHighlight
@@ -205,27 +206,22 @@ int editorReadKey()
                         return END_KEY;
                     }
                 }
+                // capture ctrl+left/right/delete keys
                 else if (seq[2] == ';')
                 {
                     if (read(STDIN_FILENO, &seq[3], 1) != 1)
                         return '\x1b';
                     if (read(STDIN_FILENO, &seq[4], 1) != 1)
                         return '\x1b';
-                    if (seq[3] == '5')
+                    if (seq[1] == '1' && seq[3] == '5')
                     {
                         if (seq[4] == 'D')
                             return CTRL_ARROW_LEFT;
                         if (seq[4] == 'C')
                             return CTRL_ARROW_RIGHT;
+                    } else if (seq[1] == '3' && seq[3] == '5') {
+                        return CTRL_DEL;
                     }
-                }
-                else if (seq[1] == '5' && seq[2] == 'D')
-                {
-                    return CTRL_ARROW_LEFT;
-                }
-                else if (seq[1] == '5' && seq[2] == 'C')
-                {
-                    return CTRL_ARROW_RIGHT;
                 }
             }
             else
@@ -781,7 +777,7 @@ void editorSave()
                 close(fd);
                 free(buf);
                 E.dirty = 0;
-                editorSetStatusMessage("%d bytes written to disk", len);
+                editorSetStatusMessage("Saved %s (%d bytes)", E.filename, len);
                 return;
             }
         }
@@ -1025,8 +1021,11 @@ void editorDrawRows(struct abuf *ab)
 void editorDrawStatusBar(struct abuf *ab)
 {
     abAppend(ab, "\x1b[7m", 4);
-    char status[80], rstatus[80];
-    int len = snprintf(status, sizeof(status), "%.20s - %d lines %s",
+    char status[512], rstatus[80];
+    char filepath[4096] = {'\0'};
+    if (!getcwd(filepath, sizeof(filepath))) return;
+    int len = snprintf(status, sizeof(status), "%s/%.20s - %d lines %s",
+                       (filepath[0] != '\0') ? filepath : "",
                        E.filename ? E.filename : "[No Name]", E.numrows,
                        E.dirty ? "(modified)" : "");
     int rlen = snprintf(rstatus, sizeof(rstatus), "%s | %d/%d",
@@ -1181,25 +1180,23 @@ void editorMoveCursor(int key)
             E.cx = 0;
         }
         break;
+
     case ARROW_UP:
-        if (E.cy != 0)
-        {
-            E.cy--;
-        }
-        break;
     case ARROW_DOWN:
-        if (E.cy < E.numrows)
+        if ((key == ARROW_UP && E.cy > 0) || (key == ARROW_DOWN && E.cy < E.numrows))
         {
-            E.cy++;
+            E.cy += (key == ARROW_UP) ? -1 : 1;
         }
         break;
 
     case CTRL_ARROW_LEFT:
-        if (E.cx != 0)
+        if (row && E.cx != 0)
         {
-            E.cx--;
+            do
+                E.cx--;
+            while (E.cx > 0 && row->chars[E.cx - 1] != ' ');
         }
-        else if (E.cy > 0)
+        else if (row && E.cx == 0 && E.cy > 0)
         {
             E.cy--;
             E.cx = E.row[E.cy].size;
@@ -1208,9 +1205,11 @@ void editorMoveCursor(int key)
     case CTRL_ARROW_RIGHT:
         if (row && E.cx < row->size)
         {
-            E.cx++;
+            do
+                E.cx++;
+            while (E.cx < row->size && row->chars[E.cx] != ' ');
         }
-        else if (row && E.cx == row->size)
+        else if (row && E.cx == row->size && E.cy < E.numrows)
         {
             E.cy++;
             E.cx = 0;
@@ -1231,6 +1230,7 @@ void editorProcessKeypress()
     static int quit_times = RED_QUIT_TIMES;
 
     int c = editorReadKey();
+    erow *row = (E.cy >= E.numrows) ? NULL : &E.row[E.cy];
 
     switch (c)
     {
@@ -1276,11 +1276,37 @@ void editorProcessKeypress()
         break;
 
     case BACKSPACE:
-    //case CTRL_KEY('h'): //do 
     case DEL_KEY:
         if (c == DEL_KEY)
             editorMoveCursor(ARROW_RIGHT);
         editorDelChar();
+        break;
+
+    case CTRL_KEY('h'): //backspace character is the same as CTRL+H
+        if (row && E.cx != 0)
+        {
+            do editorDelChar();
+            while (E.cx > 0 && row->chars[E.cx - 1] != ' ' && !is_separator(row->chars[E.cx - 1]));
+        }
+        else if (row && E.cx == 0 && E.cy > 0)
+        {
+            E.cy--;
+            E.cx = E.row[E.cy].size;
+        }
+        break;
+
+    case CTRL_DEL:
+        if (row && E.cx < row->size)
+        {
+            do
+                {
+                    editorMoveCursor(ARROW_RIGHT);
+                    editorDelChar();
+                } 
+            while (E.cx < row->size && row->chars[E.cx] != ' ');
+            editorDelChar();
+            editorMoveCursor(ARROW_RIGHT);
+        }
         break;
 
     case PAGE_UP:
@@ -1306,13 +1332,11 @@ void editorProcessKeypress()
         break;
 
     case CTRL_ARROW_LEFT:
-        editorMoveCursor(ARROW_LEFT);
+        editorMoveCursor(CTRL_ARROW_LEFT);
         break;
     case CTRL_ARROW_RIGHT:
-        editorMoveCursor(ARROW_RIGHT);
+        editorMoveCursor(CTRL_ARROW_RIGHT);
         break;
-
-    case CTRL_KEY(BACKSPACE):
 
     case ARROW_UP:
     case ARROW_DOWN:
@@ -1320,7 +1344,6 @@ void editorProcessKeypress()
     case ARROW_RIGHT:
         editorMoveCursor(c);
         break;
-
 
     case CTRL_KEY('l'):
     case '\x1b':
