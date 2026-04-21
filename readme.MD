@@ -6,7 +6,7 @@ Basic text file editing with basic syntax highlighting for a few languages.
 
 ## To-Do
 
-- [ ] Create file if passed filename doesn't exist
+- [x] Create file if passed filename doesn't exist
 - [x] Add Ctrl-Left/Right for word jumps
 - [ ] Scroll wheel support
 - [ ] Replace ioctl and termios with something cross-compatible (curses?)
